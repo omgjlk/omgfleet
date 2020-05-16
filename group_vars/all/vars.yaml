@@ -1,0 +1,3 @@
+---
+admin_user: jkeating
+admin_public_key: "{{ vault_admin_public_key }}"

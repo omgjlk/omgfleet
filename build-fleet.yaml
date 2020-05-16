@@ -1,0 +1,79 @@
+---
+- name: Build the fleet
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Ensure resource group
+      azure_rm_resourcegroup:
+        name: omgfleet
+        state: present
+        location: westus2
+
+    - name: Ensure vnetwork
+      azure_rm_virtualnetwork:
+        resource_group: omgfleet
+        name: omgnet
+        address_prefixes_cidr:
+          - "10.0.0.0/16"
+        state: present
+
+    - name: Ensure subnet
+      azure_rm_subnet:
+        resource_group: omgfleet
+        virtual_network_name: omgnet
+        name: mainsub
+        address_prefix_cidr: "10.0.0.0/24"
+
+    - name: Ensure Public IPs
+      azure_rm_publicipaddress:
+        resource_group: omgfleet
+        name: samson
+        allocation_method: Static
+        state: present
+
+    - name: Ensure security group
+      azure_rm_securitygroup:
+        resource_group: omgfleet
+        state: present
+        rules:
+          - name: ssh
+            protocol: Tcp
+            destination_port_range: 22
+            access: Allow
+            priority: 1001
+            direction: Inbound
+        name: samson_shields
+
+    - name: Ensure vnic
+      azure_rm_networkinterface:
+        resource_group: omgfleet
+        name: samson_nic
+        subnet_name: mainsub
+        virtual_network: omgnet
+        ip_configurations:
+          - name: mainIP
+            public_ip_address_name: samson
+            public_ip_allocation_method: Static
+            primary: true
+        state: present
+        security_group: samson_shields
+
+    - name: Ensure VM
+      azure_rm_virtualmachine:
+        resource_group: omgfleet # required. Name of the resource group containing the virtual machine.
+        image:
+          offer: CentOS
+          publisher: OpenLogic
+          sku: 7.5
+          version: latest
+        name: samson
+        ssh_public_keys:
+          - path: /home/{{ admin_user }}/.ssh/authorized_keys
+            key_data: "{{ admin_public_key }}"
+        ssh_password_enabled: false
+        state: present
+        network_interface_names: samson_nic
+        vm_size: Standard_B2ms
+        admin_username: "{{ admin_user }}"
+        os_type: Linux

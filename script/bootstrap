@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# For MacOS
+echo "Make sure homebrew is installed"
+echo "Run: brew bundle"
+echo "Run: pipenv install"
