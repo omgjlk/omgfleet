@@ -1,0 +1,85 @@
+---
+- name: Fleet Configuration
+  hosts: samson
+  gather_facts: false
+  vars:
+    basepkgs:
+      - podman-1.6.4-16.el7_8
+
+  tasks:
+    - name: Ensure packages
+      yum:
+        name: "{{ basepkgs }}"
+        state: present
+      become: true
+
+    - name: enable namespaces for podman
+      sysctl:
+        name: user.max_user_namespaces
+        state: present
+        value: "28633"
+      become: true
+
+    - name: bip build dir
+      file:
+        dest: bipbuild
+        state: directory
+
+    - name: bip build file
+      copy:
+        dest: bipbuild/Dockerfile
+        src: files/Dockerfile
+      notify: bip image build
+
+    - name: bip build templates
+      template:
+        dest: bipbuild/{{ item }}
+        src: templates/{{ item }}.j2
+        mode: "0600"
+      loop:
+        - bip.conf
+        - bip.pem
+      notify: bip image build
+
+    - meta: flush_handlers
+
+    - name: service file for bip
+      copy:
+        dest: /etc/systemd/system/bip.service
+        src: files/bip.service
+      become: true
+      notify: restart bip
+
+    - name: enable bip service
+      systemd:
+        name: bip
+        enabled: true
+        daemon_reload: true
+      become: true
+
+    - meta: flush_handlers
+
+    - name: start bip service
+      systemd:
+        name: bip
+        state: started
+      become: true
+
+  handlers:
+    # This is forced as it will not detect changes in source
+    # files to build a new one.
+    - name: bip image build
+      podman_image:
+        name: bip
+        path: bipbuild
+        state: build
+        force: true
+      become: true
+      notify: restart bip
+
+    - name: restart bip
+      systemd:
+        name: bip
+        daemon_reload: true
+        state: restarted
+      become: true

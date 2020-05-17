@@ -1,3 +1,8 @@
 ---
 admin_user: jkeating
 admin_public_key: "{{ vault_admin_public_key }}"
+bippw: "{{ vault_bippw }}"
+ulug_chan_pass: "{{ vault_ulug_chan_pass }}"
+freenode_nicpw: "{{ vault_freenode_nicpw }}"
+freenode_fba: "{{ vault_freenode_fba }}"
+bip_pem: "{{ vault_bip_pem }}"

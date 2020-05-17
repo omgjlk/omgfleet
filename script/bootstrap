@@ -4,3 +4,4 @@
 echo "Make sure homebrew is installed"
 echo "Run: brew bundle"
 echo "Run: pipenv install"
+echo "Run: az login"
