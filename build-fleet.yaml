@@ -67,7 +67,7 @@
 
     - name: Ensure VM
       azure_rm_virtualmachine:
-        resource_group: omgfleet # required. Name of the resource group containing the virtual machine.
+        resource_group: omgfleet
         image:
           offer: CentOS
           publisher: OpenLogic
